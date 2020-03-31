@@ -10,6 +10,8 @@ def add_messages(username, message):
     """ add messages to messages list"""
     now = datetime.now().strftime("%H:%M:%S")
     messages.append("({}) {}: {}".format(now, username, message))
+    messages_dict = {"timestamp": now, "from": username,"message":message}
+    messages.append(messages_dict)
 
 def get_all_messages():
     """Get all the messages and separete the with </br> tag"""
@@ -27,10 +29,18 @@ def index():
 
     return render_template("index.html")
 
-@app.route('/<username>')
+@app.route('/<username>', methods = ["GET","POST"])
 def user(username):
     """Display chat messages"""
-    return "<h1>Welcome, {0}</h1>{1}".format(username, get_all_messages())
+    """return "<h1>Welcome, {0}</h1>{1}".format(username, messages)"""
+    if request.method == "POST":
+        username=session["username"]
+        message = request.form["message"]
+        add_messages(username, message)
+    """ if comment out line 41 the message typed will come again and repeart forever"""
+    return redirect(session["username"])
+    
+    return render_template("chat.html", username = username, chat_messages = messages)
 
 @app.route('/<username>/<message>')
 def send_message(username, message):
