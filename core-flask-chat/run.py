@@ -1,51 +1,42 @@
 import os
 from datetime import datetime
-from flask import Flask, redirect, render_template, request, session
+from flask import Flask, redirect, render_template, request, session, url_for
+
 
 app = Flask(__name__)
 app.secret_key = "randomstring123"
-messages = []
+messages = []   
 
-def add_messages(username, message):
-    """ add messages to messages list"""
+
+def add_message(username, message):
+    """ add messages to 'messages' list"""
     now = datetime.now().strftime("%H:%M:%S")
-    messages.append("({}) {}: {}".format(now, username, message))
-    messages_dict = {"timestamp": now, "from": username,"message":message}
-    messages.append(messages_dict)
+    messages.append({"timestamp": now, "from": username,"message": message})
 
-def get_all_messages():
-    """Get all the messages and separete the with </br> tag"""
-    return "<br>".join(messages)
 
-@app.route("/", methods = ["GET","POST"])
+@app.route("/", methods = ["GET", "POST"])
 def index():
     """Main page with instructions"""
-
     if request.method == "POST":
-        session["username"] = request.form["username"]
+        session["username"]=request.form["username"]
 
     if "username" in session:
-        return redirect(session["username"])
+        return redirect(url_for("user", username=session["username"]))
 
     return render_template("index.html")
 
-@app.route('/<username>', methods = ["GET","POST"])
+
+@app.route("/chat/<username>", methods=["GET","POST"])
 def user(username):
-    """Display chat messages"""
-    """return "<h1>Welcome, {0}</h1>{1}".format(username, messages)"""
+    """Add and display chat messages"""    
     if request.method == "POST":
         username=session["username"]
         message = request.form["message"]
-        add_messages(username, message)
-    """ if comment out line 41 the message typed will come again and repeart forever"""
-    return redirect(session["username"])
-    
-    return render_template("chat.html", username = username, chat_messages = messages)
+        add_message(username, message)
+        """ if comment out line 41 the message typed will come again and repeart forever"""
+        return redirect(url_for("user", username=session["username"]))
 
-@app.route('/<username>/<message>')
-def send_message(username, message):
-    """Create a new message and redirect back to the chat page"""
-    add_messages(username,message)
-    return redirect("/" + username)
+    return render_template("chat.html", username=username, chat_messages=messages)
 
-app.run(host=os.getenv('IP'), port=int(os.getenv('PORT')),debug=True)
+
+app.run(host=os.getenv('IP'), port=int(os.getenv('PORT')), debug=True)
